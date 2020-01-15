@@ -2,6 +2,12 @@
 
 # Strang : Breaking the % operator since 1994.
 
+# Treat strings like numbers which are read left to right. Instead of a digit going 0-9, it goes from codepoint 32 to infinity.
+# Far left is the starting index (as per usual with strings), as opposed to numbers having the far right be the start.
+# For example:
+#  Index : 0123456789
+#  Value : strang str
+
 class Strang(str):
 
     def verify_stringy(questionable):
@@ -54,6 +60,35 @@ class Strang(str):
         # All lines below 100 characters will be ~~REDACTED~~.
         return ''.join( chr(pair[0]) if pair[1] <= 0 else chr((pair[0] % pair[1]) + 32 ) for pair in zip(aints, bints) )
 
+    #def __radd__(self, other):
+    #    pass
+
+    # Wait... is it possible to have a negative string?
+    # What does that even mean?
+    def __add__(self, other):
+        if Strang.verify_stringy(other):
+            other = str(other)
+        else:
+            raise TypeError('Cannot convert {} to a string.'.format(repr(other)))
+
+        A = self.s
+        B = other
+
+        ## Pad both strings to the max length of either.
+        pad_to = max( len(A), len(B) )
+        pad = lambda string:'{: <{pad_to}}'.format(string, pad_to=pad_to)
+        A, B = pad(A), pad(B)
+
+        # -32 at start, and +32 at exit.
+        # Aligns to ascii 32 (space) and beyond. kinda hard to print control codes.
+        aints = tuple( ord(char)-32 for char in A )
+        bints = tuple( ord(char)-32 for char in B )
+
+        # The nice thing about using unicode as the the domain/range is you literally can't rollover.
+        # No carry required!
+        return ''.join( chr(p[0] + p[1] + 32) for p in zip(aints, bints) )
+
+
     def __repr__(self):
         return repr(self.s)
 
@@ -87,6 +122,10 @@ def main():
     print('')
     print('"aaa" % "abc"')
     print('"{}"'.format( Strang('aaa')%strang) )
+
+    print('')
+    print('"abc" + "def"')
+    print('"{}"'.format( strang + 'def'))
 
     strange_string = Strang('e')
 
